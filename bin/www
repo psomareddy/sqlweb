@@ -1,0 +1,125 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+require('newrelic');
+const util = require('util')
+
+var app = require('../app');
+var debug = require('debug')('sqlweb:server');
+var http = require('http');
+const oracledb = require("oracledb");
+const dbConfig = require('../database.js');
+const defaultThreadPoolSize = 4;
+
+oracledb.initOracleClient({ libDir: 'C:\\oracleclient\\instantclient_21_6' });
+
+// Increase thread pool size by poolMax
+// !!! Note: On Windows this won't have an effect. Instead the variable must be set before Node.js is started !!!
+// process.env.UV_THREADPOOL_SIZE = dbConfig.hrPool.poolMax + defaultThreadPoolSize;
+
+/**
+ * Get port from environment and store in Express.
+ */
+
+let port = normalizePort(process.env.PORT || '3000');
+app.set('port', port);
+
+/**
+ * config for your database
+ */
+/*
+let config = {
+    user: 'preddy',
+    password: 'Brespo%85',
+    server: 'localhost',
+    database: 'BikeStores',
+    trustServerCertificate: true
+};
+*/
+
+
+// debug
+// console.log(util.inspect(sql.Request.prototype, {showHidden: true, depth: null, colors: true}))
+// debug
+// console.log(sql.ConnectionPool.constructor);
+
+
+//instantiate a connection pool
+oracledb.createPool(dbConfig.nrPool, (error,pool)=>{
+    if (error){
+        console.log(error);
+        return;
+    }
+    console.log("Connection Pool oracle success")
+    console.log(pool);
+
+    // Create and Start the server on port 3000
+    http.createServer(app).listen(3020, "0.0.0.0")
+    console.log('Node server running on port 3020');
+    //app.locals.db = oracledb;
+});
+
+
+
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+    var port = parseInt(val, 10);
+
+    if (isNaN(port)) {
+        // named pipe
+        return val;
+    }
+
+    if (port >= 0) {
+        // port number
+        return port;
+    }
+
+    return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+    if (error.syscall !== 'listen') {
+        throw error;
+    }
+
+    var bind = typeof port === 'string'
+        ? 'Pipe ' + port
+        : 'Port ' + port;
+
+    // handle specific listen errors with friendly messages
+    switch (error.code) {
+        case 'EACCES':
+            console.error(bind + ' requires elevated privileges');
+            process.exit(1);
+            break;
+        case 'EADDRINUSE':
+            console.error(bind + ' is already in use');
+            process.exit(1);
+            break;
+        default:
+            throw error;
+    }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+    var addr = server.address();
+    var bind = typeof addr === 'string'
+        ? 'pipe ' + addr
+        : 'port ' + addr.port;
+    debug('Listening on ' + bind);
+}
